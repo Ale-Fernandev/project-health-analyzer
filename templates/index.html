@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Project Health Analyzer</title>
+    
+    <!-- Link to our CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Google Fonts for professional typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-heartbeat"></i>
+                <span>Project Health Analyzer</span>
+            </div>
+            <div class="nav-subtitle">
+                AI-Powered Repository Analysis
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">
+                <span class="gradient-text">Analyze Your GitHub Repository</span>
+            </h1>
+            <p class="hero-description">
+                Get instant AI-powered insights about your project's health, security vulnerabilities, 
+                outdated dependencies, and actionable recommendations.
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="input-card">
+                <label for="repo-url" class="input-label">
+                    <i class="fab fa-github"></i> GitHub Repository URL
+                </label>
+                <div class="input-group">
+                    <input 
+                        type="url" 
+                        id="repo-url" 
+                        class="repo-input" 
+                        placeholder="https://github.com/username/repository"
+                        pattern="https://github\.com/[\w-]+/[\w-]+"
+                    >
+                    <button id="analyze-btn" class="analyze-button">
+                        <i class="fas fa-microscope"></i>
+                        <span>Analyze</span>
+                    </button>
+                </div>
+                <small class="input-hint">
+                    Enter a public GitHub repository URL to begin analysis
+                </small>
+            </div>
+        </div>
+
+        <!-- Progress Section (Hidden by default) -->
+        <div id="progress-section" class="progress-section" style="display: none;">
+            <div class="progress-card">
+                <div class="progress-header">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span id="progress-text">Initializing analysis...</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-steps" class="progress-steps">
+                    <div class="step" id="step-1">
+                        <i class="fas fa-download"></i> Fetching repository
+                    </div>
+                    <div class="step" id="step-2">
+                        <i class="fas fa-shield-alt"></i> Security scanning
+                    </div>
+                    <div class="step" id="step-3">
+                        <i class="fas fa-cubes"></i> Checking dependencies
+                    </div>
+                    <div class="step" id="step-4">
+                        <i class="fas fa-robot"></i> AI analysis
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section (Hidden by default) -->
+        <div id="results-section" class="results-section" style="display: none;">
+            <!-- Health Score Card -->
+            <div class="score-card">
+                <div class="score-header">
+                    <h2>Overall Health Score</h2>
+                </div>
+                <div class="score-display">
+                    <div class="score-circle" id="score-circle">
+                        <svg width="200" height="200">
+                            <circle cx="100" cy="100" r="90" class="score-bg"></circle>
+                            <circle cx="100" cy="100" r="90" class="score-fill" id="score-fill"></circle>
+                        </svg>
+                        <div class="score-text">
+                            <span id="score-value">0</span>
+                            <span class="score-label">/ 100</span>
+                        </div>
+                    </div>
+                    <div class="score-details" id="score-details">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Repository Info -->
+            <div class="repo-info-card" id="repo-info">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- Issues Grid -->
+            <div class="issues-grid">
+                <!-- Security Card -->
+                <div class="issue-card" id="security-card">
+                    <div class="issue-header">
+                        <i class="fas fa-lock"></i>
+                        <h3>Security</h3>
+                    </div>
+                    <div class="issue-content" id="security-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Dependencies Card -->
+                <div class="issue-card" id="dependencies-card">
+                    <div class="issue-header">
+                        <i class="fas fa-cube"></i>
+                        <h3>Dependencies</h3>
+                    </div>
+                    <div class="issue-content" id="dependencies-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- CI/CD Card -->
+                <div class="issue-card" id="cicd-card">
+                    <div class="issue-header">
+                        <i class="fas fa-cogs"></i>
+                        <h3>CI/CD Pipeline</h3>
+                    </div>
+                    <div class="issue-content" id="cicd-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Documentation Card -->
+                <div class="issue-card" id="docs-card">
+                    <div class="issue-header">
+                        <i class="fas fa-book"></i>
+                        <h3>Documentation</h3>
+                    </div>
+                    <div class="issue-content" id="docs-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Section -->
+            <div class="ai-insights-card" id="ai-insights" style="display: none;">
+                <div class="ai-header">
+                    <i class="fas fa-brain"></i>
+                    <h3>AI-Powered Insights</h3>
+                </div>
+                <div class="ai-content" id="ai-content">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Recommendations Section -->
+            <div class="recommendations-card" id="recommendations" style="display: none;">
+                <div class="recommendations-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Actionable Recommendations</h3>
+                </div>
+                <div class="recommendations-list" id="recommendations-list">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="new-analysis-btn" class="secondary-button">
+                    <i class="fas fa-redo"></i> New Analysis
+                </button>
+                <button id="download-report-btn" class="primary-button">
+                    <i class="fas fa-download"></i> Download Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Section (Hidden by default) -->
+        <div id="error-section" class="error-section" style="display: none;">
+            <div class="error-card">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Analysis Failed</h3>
+                <p id="error-message"></p>
+                <button id="retry-btn" class="primary-button">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Built with <i class="fas fa-heart"></i> for Zeal I.T Consultants</p>
+        <p class="footer-tech">Powered by Google Gemini AI & GitHub API</p>
+    </footer>
+
+    <!-- Link to our JavaScript file -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
