@@ -7,55 +7,55 @@ class AIAnalyzer:
     def __init__(self, api_key):
         """Initialize with Google's Gemini API."""
         genai.configure(api_key=api_key)
-        # Use the latest Gemini model
         self.model = genai.GenerativeModel('gemini-1.5-flash')
         
     def calculate_health_score_ai(self, analysis_data):
-        """Use AI to calculate a more nuanced health score based on all factors."""
+        """Let AI determine the health score based on ALL data"""
         try:
-            # Extract key metrics
-            days_old = analysis_data.get('repo_data', {}).get('days_since_activity', 9999)
-            stars = analysis_data.get('repo_data', {}).get('stars', 0)
+            # Convert all data to a comprehensive summary
             
+            data_summary = json.dumps(analysis_data, indent=2, default=str)
+            # Prompt for Gemini to return a scor
             prompt = f"""
-            As an expert software engineer, calculate a health score (0-100) for this repository.
+            You are an expert software engineer evaluating a Github repository's health.
+
+            Analyze this complete repository data and return a health score from 0-100.
+
+            DATA:
             
-            CONTEXT:
-            - Repository: {analysis_data.get('repo_data', {}).get('name', 'Unknown')}
-            - Stars: {stars}
-            - Days since last update: {days_old} days
-            - Archived: {analysis_data.get('repo_data', {}).get('archived', False)}
+            {data_summary}
+
+            SCORING CRITERIA:
+            - 90-100: Excellent - Actively maintained, no security issues, production-ready
+            - 70-89: Good - Well maintained, minor issues, safe to use
+            - 50-69: Fair - Needs updates, some concerns, use with caution
+            - 30-49: Poor - Significant issues, abandoned or vulnerable
+            - 0-29: Critical - Severely compromised, abandoned, or dangerous
+
+            Consider these factors:
+            1. Security vulnerabilities (MOST IMPORTANT)
+            - Known CVEs, GHSA alerts, exposed secrets
+            2. Maintenance Status
+            - When last updated vs. type of project
+            - A stable library not updated for 2 years might be fine
+            - A web framework not updated for 2 years is concerning
+            3. Dependencies
+            - Vulnerable dependencies are critical
+            - Outdated dependencies are concering
+            4. Project maturity
+            - Documentation, CI/CD, license, etc...
+            5. Context
+            - 200,000 Stars means it's probably maintained even if CI/CD fails, but check regardless..
+            - 0-10,000 Stars and 3 years old probably means its abandoned
             
-            CRITICAL FACTORS:
-            - Critical security issues: {analysis_data.get('security_issues', {}).get('critical_issues', 0)}
-            - GHSA alerts: {len(analysis_data.get('security_issues', {}).get('ghsa_alerts', []))}
-            - Days since update: {days_old}
-            
-            HIGH IMPORTANCE:
-            - High security issues: {analysis_data.get('security_issues', {}).get('high_issues', 0)}
-            - Vulnerable dependencies: {analysis_data.get('dependencies', {}).get('vulnerable_count', 0)}
-            - Outdated dependencies: {analysis_data.get('dependencies', {}).get('outdated_count', 0)}
-            
-            MODERATE IMPORTANCE:
-            - CI/CD exists: {analysis_data.get('ci_cd', {}).get('has_ci_cd', False)}
-            - CI/CD status: {analysis_data.get('ci_cd', {}).get('last_run_status', 'Unknown')}
-            - Medium security issues: {analysis_data.get('security_issues', {}).get('medium_issues', 0)}
-            - Documentation: README={analysis_data.get('documentation', {}).get('has_readme', False)}, License={analysis_data.get('documentation', {}).get('has_license', False)}
-            
-            SCORING RULES:
-            1. If repository has >10,000 stars and updated within 30 days, minimum score is 65 (popular and active)
-            2. If repository has >50,000 stars and updated within 90 days, minimum score is 75 (very popular)
-            3. CI/CD "failure" in active repos (updated <30 days) should only deduct 5-10 points, not 20+
-            4. CI/CD "Unknown" or "Unable to Access" should only deduct 5 points if repo is otherwise healthy
-            5. For repos not updated in 2+ years, maximum score is 40
-            6. For repos not updated in 1+ year, maximum score is 60
-            7. Archived repos get maximum 25
-            
-            IMPORTANT: Popular, actively maintained projects (like React with 200k+ stars, updated recently) 
-            should score 75-95 even with CI/CD issues. A failing CI/CD in an active project is much less 
-            concerning than an abandoned project.
-            
-            Return ONLY a number between 0-100.
+            IMPORTANT CONTEXTUAL RULES:
+            - Known projects by big companies with failing CI/CD but still recently updated should receive a good score
+            - A project by an unknown person from 5 years ago shouldn't receive a high score, especially if there are many outdated dependencies
+            - Popular library with no updates for over a year but has no vulnerabilities or out dated packages should receive a score above 60
+            - Any project with critical vulnerabilities shouldn't receive a score higher than 40
+            - Any project with exposed secrets shouldn't receive a score higher than 20
+
+            Return ONLY a number between 0-100, nothing else.
             """
             
             response = self.model.generate_content(prompt)
@@ -148,182 +148,111 @@ class AIAnalyzer:
     def generate_insights(self, analysis_data):
         """Generate comprehensive AI-powered insights."""
         try:
-            repo_data = analysis_data.get('repo_data', {})
-            security = analysis_data.get('security_issues', {})
-            dependencies = analysis_data.get('dependencies', {})
-            ci_cd = analysis_data.get('ci_cd', {})
-            docs = analysis_data.get('documentation', {})
+            data_summary = json.dumps(analysis_data, indent=2, default=str)
             
             prompt = f"""
-            Analyze this GitHub repository and provide 3-4 concise, actionable insights.
-            
-            Repository: {repo_data.get('name', 'Unknown')}
-            Language: {repo_data.get('language', 'Unknown')}
-            Last updated: {repo_data.get('days_since_activity', 'Unknown')} days ago
-            Stars: {repo_data.get('stars', 0)}
-            Open issues: {repo_data.get('open_issues', 0)}
-            Archived: {repo_data.get('archived', False)}
-            
-            Security:
-            - Critical issues: {security.get('critical_issues', 0)}
-            - High issues: {security.get('high_issues', 0)}
-            - GHSA alerts: {len(security.get('ghsa_alerts', []))}
-            - Security score: {security.get('security_score', 0)}/100
-            
-            Dependencies:
-            - Outdated: {dependencies.get('outdated_count', 0)}
-            - Vulnerable: {dependencies.get('vulnerable_count', 0)}
-            - Last update: {dependencies.get('last_update', 'Unknown')}
-            
-            CI/CD:
-            - Has CI/CD: {ci_cd.get('has_ci_cd', False)}
-            - Type: {ci_cd.get('pipeline_type', 'None')}
-            - Status: {ci_cd.get('last_run_status', 'Unknown')}
-            
-            Documentation:
-            - README: {docs.get('has_readme', False)} ({docs.get('readme_size', 0)} bytes)
-            - License: {docs.get('has_license', False)}
-            - Security policy: {docs.get('has_security_policy', False)}
-            
-            Provide insights focusing on:
-            1. The most critical issue that needs immediate attention
-            2. The repository's maintenance status and viability
-            3. Security posture and risks
-            4. Specific, actionable next steps
-            
-            Be direct and specific. Each insight should be 1-2 sentences maximum.
-            Focus on what matters most for someone evaluating this repository.
+            As a software security expert, analyze this repository data and provide exactly 4 insights.
+
+            Data:
+            {data_summary}
+
+            Provide insights in this format:
+            1. One insight about the maintenance/abandonment status, if any
+            2. One insight about security vulnerabilities or risks, if any
+            3. One insight about dependencies and technical debt, if any
+            4. One recommendation for someone considering usingg this repository
+
+            Each insight should be a single, clear sentence.
+            Be specific - mention actual numbers, dates, and issues or vulnerabilities that were found.
+            Be honest - if it's abandoned or bulnerable, say so clearly.
+
+            Focus on what matters most for someone evaluating whether to use this code or not.
             """
             
             response = self.model.generate_content(prompt)
             insights_text = response.text
             
-            # Parse insights into list
+            # Parse insights
             insights = []
             for line in insights_text.split('\n'):
                 line = line.strip()
-                if line and not line.startswith('#'):
+                if line and len(line) > 20:
                     # Remove markdown formatting and numbering
-                    line = line.lstrip('*-•123456789. ')
-                    if len(line) > 20:
+                    line = line.lstrip('1234567890.-* ')
+                    if line:
                         insights.append(line)
-            
-            # Ensure we have at least some insights
-            if not insights:
-                insights = self._generate_fallback_insights(analysis_data)
             
             return insights[:4]  # Return max 4 insights
             
         except Exception as e:
             print(f"Error generating AI insights: {e}")
-            return self._generate_fallback_insights(analysis_data)
+            return [
+                "Unable to generate AI insights at this time.",
+                "Review the security and dependency information above",
+                "Check the lat update date to assess maintenance status",
+                "Consider the repository's age and activity level"
+            ]
+    def generate_verdict(self, analysis_data, health_score):
+            """Generate a clear verdict about the repository."""
+            try:
+                data_summary = json.dumps(analysis_data, indent=2, default=str)
+                
+                prompt = f"""
+                Based on this repository analysis with a health score of {health_score}/100:
+                
+                {data_summary}
+                
+                Provide a 2-3 sentence VERDICT that answers:
+                1. Should someone use this repository? (Yes/No/With Caution)
+                2. What's the main risk or benefit?
+                3. What type of project is this suitable for? (Production/Development/Hobby/None)
+                
+                Be direct and clear. Examples:
+                - "DO NOT USE. This repository has been abandoned for 5 years and contains multiple critical vulnerabilities."
+                - "SAFE TO USE. Well-maintained project with regular updates and no security issues."
+                - "USE WITH CAUTION. The code is stable but hasn't been updated in 2 years - review dependencies before production use."
+                
+                Start with: SAFE TO USE, USE WITH CAUTION, or DO NOT USE.
+                """
+                
+                response = self.model.generate_content(prompt)
+                return response.text.strip()
+                
+            except Exception as e:
+                print(f"Error generating verdict: {e}")
+                
+                if health_score >= 70:
+                    return "SAFE TO USE. This repository appears to be in good health with minimal issues."
+                elif health_score >= 40:
+                    return "USE WITH CAUTION. This repository has some issues that should be addressed before production use."
+                else:
+                    return "DO NOT USE. This repository has significant issues and should not be used without major updates."
     
-    def _generate_fallback_insights(self, analysis_data):
-        """Generate fallback insights if AI fails."""
-        insights = []
-        
-        repo_data = analysis_data.get('repo_data', {})
-        security = analysis_data.get('security_issues', {})
-        dependencies = analysis_data.get('dependencies', {})
-        ci_cd = analysis_data.get('ci_cd', {})
-        
-        days_old = repo_data.get('days_since_activity', 0)
-        
-        # Maintenance status
-        if days_old > 730:
-            insights.append(f"This repository hasn't been updated in {days_old // 365} years and appears to be abandoned. Consider finding an actively maintained alternative.")
-        elif days_old > 365:
-            insights.append(f"With no updates in {days_old // 30} months, this repository is becoming stale and may have unpatched vulnerabilities.")
-        
-        # Security status
-        total_security_issues = (
-            security.get('critical_issues', 0) + 
-            security.get('high_issues', 0) + 
-            len(security.get('ghsa_alerts', []))
-        )
-        if total_security_issues > 0:
-            insights.append(f"Critical security concern: {total_security_issues} high-priority security issues need immediate attention.")
-        
-        # Dependencies
-        outdated = dependencies.get('outdated_count', 0)
-        if outdated > 10:
-            insights.append(f"With {outdated} outdated dependencies, this project has significant technical debt that will require substantial effort to modernize.")
-        
-        # CI/CD
-        if not ci_cd.get('has_ci_cd', False):
-            insights.append("No CI/CD pipeline detected, indicating lack of automated quality assurance and modern development practices.")
-        elif ci_cd.get('last_run_status') == 'failure':
-            insights.append("The CI/CD pipeline is failing, suggesting the codebase may have breaking changes or test failures.")
-        
-        # Overall recommendation
-        if days_old > 730 or total_security_issues > 5:
-            insights.append("High risk: This repository requires major renovation or replacement before production use.")
-        elif days_old > 365 or total_security_issues > 2:
-            insights.append("Medium risk: Significant updates and security patches needed before this repository is production-ready.")
-        else:
-            insights.append("Low risk: This repository appears to be in reasonable health but should still undergo security review.")
-        
-        return insights[:4]
-    
-    def analyze_code_quality(self, repo_data):
-        """Analyze code quality indicators using AI."""
+    def analyze_specific_concerns(self, analysis_data):
+        """Let AI identify specific concerns that might not be in our checks."""
         try:
             prompt = f"""
-            Based on these repository metrics, assess the code quality and maintainability:
+            As a security expert, review this repository data and identify any concerns 
+            that might not be captured by standard metrics:
             
-            - Language: {repo_data.get('language', 'Unknown')}
-            - Size: {repo_data.get('size', 0)} KB
-            - Open issues: {repo_data.get('open_issues', 0)}
-            - Forks: {repo_data.get('forks', 0)}
-            - Stars: {repo_data.get('stars', 0)}
-            - Contributors: {repo_data.get('contributors_count', 'Unknown')}
-            - Last update: {repo_data.get('days_since_activity', 'Unknown')} days ago
+            Repository: {analysis_data.get('repo_data', {}).get('name')}
+            Language: {analysis_data.get('repo_data', {}).get('language')}
+            Last Updated: {analysis_data.get('repo_data', {}).get('days_since_activity')} days ago
+            Stars: {analysis_data.get('repo_data', {}).get('stars')}
             
-            Provide a brief assessment of:
-            1. Likely code maintainability
-            2. Community engagement level
-            3. Technical debt indicators
+            Look for red flags like:
+            - Language-specific vulnerabilities (e.g., old PHP, Python 2)
+            - Deprecated technologies
+            - Suspicious patterns
+            - Maintenance concerns specific to this type of project
             
-            Keep response under 100 words and be specific.
+            Return 1-2 specific concerns if any, or "No additional concerns" if the standard metrics cover everything.
+            Keep response under 50 words.
             """
             
             response = self.model.generate_content(prompt)
-            return response.text
+            return response.text.strip()
             
         except Exception as e:
-            print(f"Error analyzing code quality: {e}")
-            return "Code quality analysis requires manual review."
-    
-    def generate_business_recommendation(self, analysis_data, health_score):
-        """Generate business-focused recommendations for decision makers."""
-        try:
-            prompt = f"""
-            As a technical consultant, provide a business recommendation for this repository:
-            
-            Health Score: {health_score}/100
-            Days since update: {analysis_data.get('repo_data', {}).get('days_since_activity', 'Unknown')}
-            Security issues: {analysis_data.get('security_issues', {}).get('critical_issues', 0)} critical, {analysis_data.get('security_issues', {}).get('high_issues', 0)} high
-            Outdated dependencies: {analysis_data.get('dependencies', {}).get('outdated_count', 0)}
-            Stars: {analysis_data.get('repo_data', {}).get('stars', 0)}
-            
-            Provide a 2-3 sentence executive summary addressing:
-            1. Should a company adopt/build upon this repository?
-            2. Estimated effort level (low/medium/high) to make it production-ready
-            3. Main risk factor
-            
-            Be direct and business-focused. No technical jargon.
-            """
-            
-            response = self.model.generate_content(prompt)
-            return response.text
-            
-        except Exception as e:
-            print(f"Error generating business recommendation: {e}")
-            
-            # Fallback business recommendation
-            if health_score >= 70:
-                return "This repository is in good health and suitable for adoption with minimal updates required. Low effort needed to deploy to production. Main risk: Ensure security patches are current."
-            elif health_score >= 40:
-                return "This repository requires moderate renovation before production use. Medium effort needed including dependency updates and security fixes. Main risk: Technical debt from outdated components."
-            else:
-                return "This repository is high-risk and not recommended for adoption without major overhaul. High effort required for modernization. Main risk: Abandoned codebase with unpatched vulnerabilities."
+            print(f"Error analyzing specific concerns: {e}")
+            return "Unable to analyze additional concerns."
