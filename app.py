@@ -114,9 +114,7 @@ def analyze_repo():
             security_issues,
             vulnerability_report, 
             dependency_report, 
-            ci_cd_health, 
-            docs_report,
-            health_score
+            health_score,
         )
         
         if verdict:
