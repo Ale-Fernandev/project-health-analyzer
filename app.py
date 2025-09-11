@@ -106,9 +106,6 @@ def analyze_repo():
         # Get AI verdict
         verdict = ai_analyzer.generate_verdict(enhanced_prompt_data, health_score)
 
-        # Get any additional concerns AI might spot
-        additional_concerns = ai_analyzer.analyze_specific_concerns(enhanced_prompt_data)
-        
         # Generate recommendations based on AI analysis
         recommendations = generate_recommendations(
             security_issues,
@@ -116,13 +113,6 @@ def analyze_repo():
             dependency_report, 
             health_score,
         )
-        
-        if verdict:
-            ai_insights.insert(0, verdict)
-
-        if additional_concerns and additional_concerns != "No additional concerns":
-            ai_insights.append(f"Additional concern: {additional_concerns}")
-        
 
         # Compile final report
         analysis_report = {
@@ -243,7 +233,7 @@ def generate_recommendations(vulnerability_report, security, dependencies, healt
             'severity': 'high'
         })
     
-    # If no vulnerabilities found (good news!)
+    # If no vulnerabilities found
     if total_vulns == 0:
         recommendations.append({
             'priority': 'LOW',
