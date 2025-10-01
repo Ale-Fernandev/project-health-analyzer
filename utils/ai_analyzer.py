@@ -8,7 +8,7 @@ class AIAnalyzer:
         """Initialize with Google's Gemini API."""
         genai.configure(api_key=api_key)
         # Use the latest Gemini model
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         
     def calculate_health_score_ai(self, analysis_data):
         """Use AI to calculate a more nuanced health score based on all factors."""
