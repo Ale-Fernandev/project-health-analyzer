@@ -27,37 +27,82 @@ I'm providing you with comprehensive data about a repository. Please analyze it 
 
 {data_summary}
 
+CRITICAL: First identify what TYPE of repository this is:
+
+**Repository Types:**
+1. **Documentation/Tutorial/Guide** - No package.json or dependencies, primarily markdown/text, examples/guides
+   - Examples: webpack-howto, awesome-lists, learning resources, cookbooks
+   - Scoring: Age matters LESS - content can remain valid for years
+   - Focus on: Is the information still relevant? Is the technology still used?
+
+2. **Code Project/Library** - Has package.json/requirements.txt, meant to be run or imported
+   - Examples: React, Express, Django, actual applications
+   - Scoring: Age matters MORE - outdated dependencies are critical
+   - Focus on: Security, maintenance, compatibility
+
+3. **Configuration/Boilerplate** - Starter templates, configs, minimal dependencies
+   - Examples: create-react-app templates, webpack configs
+   - Scoring: Medium concern - useful if approach is still valid
+   - Focus on: Are the patterns still recommended?
+
+4. **Archived/Finished Projects** - Explicitly archived or feature-complete
+   - Examples: Moment.js (archived), small utilities that are "done"
+   - Scoring: Depends on why it's archived
+
 Consider these aspects in your analysis:
 
-1. **Security Posture**: Are there critical vulnerabilities? Security advisories? How severe are they?
+1. **Repository Type** (MOST IMPORTANT):
+   - If this is documentation/tutorial with NO dependencies, age is less critical
+   - If this is a code project WITH dependencies, age and security matter greatly
+   - Check: Does it have package.json, requirements.txt, or similar? Or just .md files?
 
-2. **Maintenance & Activity**: 
-   - When was this last updated? Is it abandoned or actively maintained?
-   - Is it archived? That's a critical red flag.
-   - Does the activity level match the project's popularity?
+2. **Security Posture**: 
+   - Are there actual dependencies that could have vulnerabilities?
+   - Or is this just documentation with no security risk?
 
-3. **Dependencies**: 
-   - How many dependencies are outdated or vulnerable?
-   - Are the vulnerabilities critical CVEs or minor issues?
-   - What's the actual risk level?
+3. **Maintenance & Activity**: 
+   - When was this last updated?
+   - For code projects: abandonment is critical
+   - For documentation: content validity matters more than recency
 
-4. **Code Quality Indicators**:
-   - Is there automated testing (CI/CD)?
-   - Is it passing or failing?
-   - Is there documentation?
+4. **Dependencies**: 
+   - **If NO dependencies detected**: Don't penalize heavily for age
+   - **If dependencies exist**: Outdated/vulnerable packages are serious
 
-5. **Context Matters**:
-   - A popular project (10k+ stars) with recent activity but failing CI might still be healthy
-   - An unpopular project (few stars) abandoned for 2 years is probably dead
-   - Some old projects are "done" and don't need updates (like stable utilities)
+5. **Context & Relevance**:
+   - Is the underlying technology still relevant? (e.g., webpack is still used)
+   - Is the information outdated even if there are no code dependencies?
+   - Would someone TODAY find this useful?
 
-Think like an engineer making a decision: Would you trust this repository in production? Would you fork it or find an alternative? What's the real risk here?
+**Scoring Guidelines by Type:**
 
-Provide your health score (0-100) as a single integer, followed by a brief one-sentence explanation of your reasoning.
+📚 **Documentation/Guides (No Dependencies):**
+- 8 years old but webpack still relevant → 45-65 (outdated info, but not dangerous)
+- 2 years old covering current tech → 70-85 (slightly dated but useful)
+- Archived docs for dead technology → 20-35 (obsolete information)
 
-Example format:
-72
-This repository is moderately healthy with regular updates and good community support, but has 5 outdated dependencies that should be addressed soon."""
+💻 **Code Projects (Has Dependencies):**
+- 2 years old, many vulnerable deps → 30-45 (security risk)
+- 6 months old, actively maintained → 85-95 (healthy)
+- Archived but was finished (like Moment) → 25-40 (use alternatives)
+
+Think like an engineer: 
+- "Is this a guide that could still teach me something useful?" (Documentation)
+- "Is this code I'd trust running in production?" (Code Project)
+- "What's the actual risk of using this?"
+
+Provide your health score (0-100) as a single integer, followed by a 1-2 sentence explanation that identifies the repo type and your reasoning.
+
+Example formats:
+
+55
+This is a documentation guide about webpack (still relevant technology) but hasn't been updated in 8 years, so some patterns and best practices are likely outdated, though the core concepts remain valid.
+
+28
+This is a code project with 47 outdated dependencies and critical security vulnerabilities, abandoned for 3 years, making it unsuitable for production use.
+
+75
+This is a stable utility library that's feature-complete with no dependencies, so the lack of recent updates isn't concerning."""
 
             response = self.model.generate_content(prompt)
             response_text = response.text.strip()
@@ -121,6 +166,11 @@ REPOSITORY: {repo_data.get('name', 'Unknown')}
 - Last Activity: {age_str}
 - Archived: {'YES - No longer maintained' if repo_data.get('archived') else 'No'}
 - License: {repo_data.get('license', 'None')}
+
+REPOSITORY TYPE INDICATORS:
+- Has Dependencies: {'Yes' if dependencies.get('total_dependencies') not in ['Unknown', 0, None] else 'No - This appears to be documentation/guide only'}
+- Package Managers Detected: {', '.join(dependencies.get('package_managers', ['None detected']))}
+- Note: If no package managers detected, this is likely a documentation/tutorial repository, not a code project
 
 SECURITY ANALYSIS:
 - Critical Security Issues: {security.get('critical_issues', 0)}
@@ -232,24 +282,42 @@ DOCUMENTATION:
 
 {data_summary}
 
-Analyze this repository and provide 3-4 key insights that would help someone decide whether to:
-- Use this repository in production
+FIRST: Identify what TYPE of repository this is by looking at the data:
+- **Documentation/Tutorial/Guide**: Has markdown files, no package.json or minimal dependencies, focuses on teaching
+- **Code Project/Library**: Has package.json/requirements.txt, meant to be installed and used
+- **Configuration/Template**: Boilerplates, starter templates
+- **Archived/Complete**: Explicitly archived or feature-complete utility
+
+Then analyze this repository and provide 3-4 key insights that would help someone decide whether to:
+- Use this repository in production (if it's code)
+- Learn from this repository (if it's documentation)
 - Fork and maintain it themselves
 - Look for alternatives
 
 Your insights should be:
-1. **Honest and direct** - don't sugarcoat issues
-2. **Context-aware** - consider the repository's purpose, popularity, and domain
-3. **Actionable** - include specific recommendations
-4. **Prioritized** - start with the most critical finding
+1. **Type-aware** - Recognize if this is documentation vs code and adjust your analysis
+2. **Honest and direct** - Don't sugarcoat issues
+3. **Context-aware** - Consider the repository's purpose, popularity, and domain
+4. **Actionable** - Include specific recommendations
+5. **Prioritized** - Start with the most critical finding
 
 Think about:
-- What's the biggest risk or opportunity here?
-- Is this project alive and maintained, or is it abandoned?
-- Are there security concerns that are dealbreakers?
-- What would you tell your team if they asked "should we use this?"
+- **For Documentation/Guides**: Is the information still relevant? Is the technology still used? Are the examples outdated?
+- **For Code Projects**: What's the biggest risk? Is this alive or dead? Are there security concerns?
+- What would you tell your team if they asked "should we use/learn from this?"
 
-Write 3-4 insights as clear paragraphs. Each insight should be 1-3 sentences. Be conversational but professional - like you're explaining this to a colleague."""
+Special considerations:
+- If there are NO dependencies (Total: 0 or Unknown), focus on content relevance, not security
+- If there are vulnerable dependencies, that's critical for code but irrelevant for docs
+- An 8-year-old tutorial might still be useful; an 8-year-old library probably isn't
+
+Write 3-4 insights as clear paragraphs. Each insight should be 1-3 sentences. Be conversational but professional.
+
+Example for DOCUMENTATION repo:
+"This is a webpack tutorial guide, not a code project, so the lack of updates is less critical from a security standpoint. However, webpack has evolved significantly in 8 years, and many patterns shown here (like CommonJS) are now considered outdated in favor of ES modules and modern configs. The core concepts remain valid for understanding webpack fundamentals, but you'd need to supplement this with current documentation for production use."
+
+Example for CODE repo:
+"This code project hasn't been updated in 14 months and contains 49 outdated dependencies with 9 known vulnerabilities. As an actively running application, these security issues represent real risk. For production use, you'd need to fork this, update all dependencies, and test extensively - basically adopting an abandoned codebase."""
 
             response = self.model.generate_content(prompt)
             insights_text = response.text.strip()
